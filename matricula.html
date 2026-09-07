@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planillón de Matrícula y Seguimiento de Pendientes</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            
+            /* Colores de Estado */
+            --status-pagado-bg: #dcfce7;
+            --status-pagado-text: #15803d;
+            --status-adelante-bg: #fef9c3;
+            --status-adelante-text: #a16207;
+            --status-moroso-bg: #fee2e2;
+            --status-moroso-text: #b91c1c;
+            --status-baja-bg: #f1f5f9;
+            --status-baja-text: #64748b;
+            --status-nocontesta-bg: #ffedd5;
+            --status-nocontesta-text: #c2410c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* KPIs / Tarjetas de Resumen */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background-color: var(--card-bg);
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .kpi-card .number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .kpi-card.total .number { color: var(--primary); }
+        .kpi-card.pagado .number { color: var(--status-pagado-text); }
+        .kpi-card.adelante .number { color: var(--status-adelante-text); }
+        .kpi-card.moroso .number { color: var(--status-moroso-text); }
+        .kpi-card.baja .number { color: var(--status-baja-text); }
+
+        /* Panel de Filtros */
+        .controls-panel {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-light);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: white;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Tabla Principal */
+        .table-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background-color: #f1f5f9;
+            border-bottom: 2px solid var(--border);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Badges de Estado */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge-pagado { background-color: var(--status-pagado-bg); color: var(--status-pagado-text); }
+        .badge-adelante { background-color: var(--status-adelante-bg); color: var(--status-adelante-text); }
+        .badge-moroso { background-color: var(--status-moroso-bg); color: var(--status-moroso-text); }
+        .badge-baja { background-color: var(--status-baja-bg); color: var(--status-baja-text); }
+        .badge-nocontesta { background-color: var(--status-nocontesta-bg); color: var(--status-nocontesta-text); }
+
+        .obs-text {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            .controls-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Planillón de Pendientes y Seguimiento de Matrícula</h1>
+        <p>Panel de Gestión Operativa - Nivel Secundario</p>
+    </header>
+
+    <!-- Tarjetas con Métricas Resumen (KPIs) -->
+    <div class="kpi-grid">
+        <div class="kpi-card total">
+            <span>Total Casos</span>
+            <div class="number" id="kpi-total">0</div>
+        </div>
+        <div class="kpi-card pagado">
+            <span>Matriculados (SI)</span>
+            <div class="number" id="kpi-pagado">0</div>
+        </div>
+        <div class="kpi-card adelante">
+            <span>Más Adelante</span>
+            <div class="number" id="kpi-adelante">0</div>
+        </div>
+        <div class="kpi-card moroso">
+            <span>Morosidad</span>
+            <div class="number" id="kpi-moroso">0</div>
+        </div>
+        <div class="kpi-card baja">
+            <span>No Matricula / Baja</span>
+            <div class="number" id="kpi-baja">0</div>
+        </div>
+    </div>
+
+    <!-- Panel de Búsqueda y Filtros -->
+    <div class="controls-panel">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Buscar por Apellido o Nombre..." onkeyup="filtrarTabla()">
+        </div>
+        <div class="filter-group">
+            <select id="filter-origen" onchange="filtrarTabla()">
+                <option value="">Todos los Orígenes</option>
+                <option value="7° a 1°">7° a 1°</option>
+                <option value="REMA 1° a 4°">REMA 1° a 4°</option>
+                <option value="Ingreso Externo">Ingreso Externo</option>
+            </select>
+
+            <select id="filter-estado" onchange="filtrarTabla()">
+                <option value="">Todos los Estados</option>
+                <option value="PAGADO">PAGADO (SI)</option>
+                <option value="MÁS ADELANTE">MÁS ADELANTE</option>
+                <option value="MOROSIDAD">MOROSIDAD</option>
+                <option value="NO MATRICULA">NO MATRICULA / BAJA</option>
+                <option value="NO CONTESTA">NO CONTESTA / SIN RTA</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tabla Principal de Datos -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Origen</th>
+                    <th>Curso Actual</th>
+                    <th>Curso Proyectado</th>
+                    <th>Apellido y Nombre</th>
+                    <th>¿Pagó?</th>
+                    <th>Estado / Categoría</th>
+                    <th>Observaciones y Seguimiento</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Se puebla dinámicamente con JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Datos Base Cargados desde la Estructura del Libro Excel
+        const alumnosData = [
+            // REMA 7°
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Bevilacqua, Nina", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Cannetti, Francesco", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará" },
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Gandino, Renata Amalia", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Jimenez, Luana Zoe", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará (confirma no continuidad)" },
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Landro, Mia", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Oscco Quispe, Valentina Isabel", pago: "NO", estado: "NO CONTESTA", obs: "Revisar pago con Camila / administración" },
+            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Selva Ruizcalderon, Santiago Antonio", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará" },
+            { origen: "7° a 1°", cursoActual: "7º C", cursoProyectado: "1º TM", nombre: "Cuellar Puenzo, Francisco Geronimo", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
+            { origen: "7° a 1°", cursoActual: "7º C", cursoProyectado: "1º TM", nombre: "Hervas, Guillermina", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará" },
+
+            // REMA DE 1° A 4°
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Cantatore Ruge, Antonella", pago: "NO", estado: "MOROSIDAD", obs: "Morosidad registrada en sistema" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Donayre Gimenez, Aylen", pago: "NO", estado: "MOROSIDAD", obs: "Morosidad registrada en sistema" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Fernandez Barlaro, Fernando Tomas", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Herard, Antonio Debson", pago: "SI", estado: "MÁS ADELANTE", obs: "Respondió SI, matriculará más adelante" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Maciel Iturrieta, Ramiro Eliam", pago: "NO", estado: "NO CONTESTA", obs: "Sin respuesta de la familia" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Rodriguez, Gabino Ignacio", pago: "NO", estado: "MOROSIDAD", obs: "Morosidad registrada en sistema" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Roldan Gallego, Nehuen", pago: "NO", estado: "NO MATRICULA", obs: "Tramitó reintegro de matrícula" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Slame, Omar Antonio", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE" },
+            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Veliz Quaranta, Santino Nathan", pago: "NO", estado: "NO CONTESTA", obs: "Sin respuesta de la familia" },
+
+            // NUEVOS EXTERNOS
+            { origen: "Ingreso Externo", cursoActual: "Externo", cursoProyectado: "3º TT", nombre: "Jiaxin He", pago: "SI", estado: "PAGADO", obs: "Inscripción aprobada (Abril 2026)" },
+            { origen: "Ingreso Externo", cursoActual: "Externo", cursoProyectado: "2º B", nombre: "Vittoria Morales Martinez", pago: "SI", estado: "PAGADO", obs: "Inscripción aprobada (Mayo 2026)" },
+            { origen: "Ingreso Externo", cursoActual: "Externo", cursoProyectado: "1º B", nombre: "Agustín Abinet", pago: "SI", estado: "PAGADO", obs: "Inscripción aprobada (Mayo 2026)" }
+        ];
+
+        // Función para renderizar la tabla y actualizar KPIs
+        function renderTabla(datos) {
+            const tbody = document.getElementById("table-body");
+            tbody.innerHTML = "";
+
+            datos.forEach(item => {
+                const tr = document.createElement("tr");
+
+                // Asignar clase de badge según estado
+                let badgeClass = "badge-nocontesta";
+                if (item.estado === "PAGADO") badgeClass = "badge-pagado";
+                else if (item.estado === "MÁS ADELANTE") badgeClass = "badge-adelante";
+                else if (item.estado === "MOROSIDAD") badgeClass = "badge-moroso";
+                else if (item.estado === "NO MATRICULA") badgeClass = "badge-baja";
+
+                tr.innerHTML = `
+                    <td><strong>${item.origen}</strong></td>
+                    <td>${item.cursoActual}</td>
+                    <td>${item.cursoProyectado}</td>
+                    <td><strong>${item.nombre}</strong></td>
+                    <td>${item.pago}</td>
+                    <td><span class="badge ${badgeClass}">${item.estado}</span></td>
+                    <td class="obs-text">${item.obs}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            actualizarKPIs(datos);
+        }
+
+        // Actualización de contadores numéricos superiores
+        function actualizarKPIs(datos) {
+            document.getElementById("kpi-total").innerText = datos.length;
+            document.getElementById("kpi-pagado").innerText = datos.filter(d => d.estado === "PAGADO" || d.pago === "SI").length;
+            document.getElementById("kpi-adelante").innerText = datos.filter(d => d.estado === "MÁS ADELANTE").length;
+            document.getElementById("kpi-moroso").innerText = datos.filter(d => d.estado === "MOROSIDAD").length;
+            document.getElementById("kpi-baja").innerText = datos.filter(d => d.estado === "NO MATRICULA").length;
+        }
+
+        // Función de filtrado combinado (Texto + Dropdowns)
+        function filtrarTabla() {
+            const searchText = document.getElementById("search-input").value.toLowerCase();
+            const filterOrigen = document.getElementById("filter-origen").value;
+            const filterEstado = document.getElementById("filter-estado").value;
+
+            const datosFiltrados = alumnosData.filter(item => {
+                const coincideNombre = item.nombre.toLowerCase().includes(searchText);
+                const coincideOrigen = filterOrigen === "" || item.origen === filterOrigen;
+                const coincideEstado = filterEstado === "" || item.estado === filterEstado;
+
+                return coincideNombre && coincideOrigen && coincideEstado;
+            });
+
+            renderTabla(datosFiltrados);
+        }
+
+        // Carga inicial al abrir la página
+        window.onload = () => renderTabla(alumnosData);
+    </script>
+</body>
+</html>
