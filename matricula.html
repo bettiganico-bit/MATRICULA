@@ -1,372 +1,393 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planillón de Matrícula y Seguimiento de Pendientes</title>
-    <style>
-        :root {
-            --primary: #1e3a8a;
-            --primary-light: #3b82f6;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-            
-            /* Colores de Estado */
-            --status-pagado-bg: #dcfce7;
-            --status-pagado-text: #15803d;
-            --status-adelante-bg: #fef9c3;
-            --status-adelante-text: #a16207;
-            --status-moroso-bg: #fee2e2;
-            --status-moroso-text: #b91c1c;
-            --status-baja-bg: #f1f5f9;
-            --status-baja-text: #64748b;
-            --status-nocontesta-bg: #ffedd5;
-            --status-nocontesta-text: #c2410c;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            padding: 20px;
-        }
-
-        header {
-            background-color: var(--primary);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        header p {
-            font-size: 0.95rem;
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-
-        /* KPIs / Tarjetas de Resumen */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .kpi-card {
-            background-color: var(--card-bg);
-            padding: 18px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-
-        .kpi-card .number {
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-
-        .kpi-card.total .number { color: var(--primary); }
-        .kpi-card.pagado .number { color: var(--status-pagado-text); }
-        .kpi-card.adelante .number { color: var(--status-adelante-text); }
-        .kpi-card.moroso .number { color: var(--status-moroso-text); }
-        .kpi-card.baja .number { color: var(--status-baja-text); }
-
-        /* Panel de Filtros */
-        .controls-panel {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .search-box input:focus {
-            border-color: var(--primary-light);
-        }
-
-        .filter-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .filter-group select {
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background-color: white;
-            font-size: 0.9rem;
-            outline: none;
-            cursor: pointer;
-        }
-
-        /* Tabla Principal */
-        .table-container {
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            overflow-x: auto;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-
-        thead {
-            background-color: #f1f5f9;
-            border-bottom: 2px solid var(--border);
-        }
-
-        th, td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            font-weight: 600;
-            color: #475569;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-        }
-
-        tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        /* Badges de Estado */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .badge-pagado { background-color: var(--status-pagado-bg); color: var(--status-pagado-text); }
-        .badge-adelante { background-color: var(--status-adelante-bg); color: var(--status-adelante-text); }
-        .badge-moroso { background-color: var(--status-moroso-bg); color: var(--status-moroso-text); }
-        .badge-baja { background-color: var(--status-baja-bg); color: var(--status-baja-text); }
-        .badge-nocontesta { background-color: var(--status-nocontesta-bg); color: var(--status-nocontesta-text); }
-
-        .obs-text {
-            font-size: 0.85rem;
-            color: #64748b;
-        }
-
-        @media (max-width: 768px) {
-            .controls-panel {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión Escolar y Matriculación</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .badge-verde { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    .badge-naranja { background-color: #ffedd5; color: #9a3412; border: 1px solid #fde68a; }
+    .badge-rojo { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .badge-rema-7 { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+    .badge-rema-14 { background-color: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+  </style>
 </head>
-<body>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col text-gray-800">
 
-    <header>
-        <h1>Planillón de Pendientes y Seguimiento de Matrícula</h1>
-        <p>Panel de Gestión Operativa - Nivel Secundario</p>
-    </header>
-
-    <!-- Tarjetas con Métricas Resumen (KPIs) -->
-    <div class="kpi-grid">
-        <div class="kpi-card total">
-            <span>Total Casos</span>
-            <div class="number" id="kpi-total">0</div>
+  <!-- Header Estilo Planillón -->
+  <header class="bg-slate-800 text-white shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-graduation-cap text-2xl text-blue-400"></i>
+        <div>
+          <h1 class="text-xl font-bold tracking-wide">Control de Matriculación & REMA</h1>
+          <p class="text-xs text-gray-400">Colegio Esteban Echeverría</p>
         </div>
-        <div class="kpi-card pagado">
-            <span>Matriculados (SI)</span>
-            <div class="number" id="kpi-pagado">0</div>
-        </div>
-        <div class="kpi-card adelante">
-            <span>Más Adelante</span>
-            <div class="number" id="kpi-adelante">0</div>
-        </div>
-        <div class="kpi-card moroso">
-            <span>Morosidad</span>
-            <div class="number" id="kpi-moroso">0</div>
-        </div>
-        <div class="kpi-card baja">
-            <span>No Matricula / Baja</span>
-            <div class="number" id="kpi-baja">0</div>
-        </div>
+      </div>
+      <button onclick="cargarDatos()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center space-x-2 shadow">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Sincronizar</span>
+      </button>
     </div>
+  </header>
 
-    <!-- Panel de Búsqueda y Filtros -->
-    <div class="controls-panel">
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="Buscar por Apellido o Nombre..." onkeyup="filtrarTabla()">
-        </div>
-        <div class="filter-group">
-            <select id="filter-origen" onchange="filtrarTabla()">
-                <option value="">Todos los Orígenes</option>
-                <option value="7° a 1°">7° a 1°</option>
-                <option value="REMA 1° a 4°">REMA 1° a 4°</option>
-                <option value="Ingreso Externo">Ingreso Externo</option>
-            </select>
-
-            <select id="filter-estado" onchange="filtrarTabla()">
-                <option value="">Todos los Estados</option>
-                <option value="PAGADO">PAGADO (SI)</option>
-                <option value="MÁS ADELANTE">MÁS ADELANTE</option>
-                <option value="MOROSIDAD">MOROSIDAD</option>
-                <option value="NO MATRICULA">NO MATRICULA / BAJA</option>
-                <option value="NO CONTESTA">NO CONTESTA / SIN RTA</option>
-            </select>
-        </div>
+  <!-- Pestañas de Navegación -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-6 flex space-x-8">
+      <button onclick="cambiarSeccion('alumnos')" id="tabAlumnos" class="py-3 font-bold border-b-2 border-blue-600 text-blue-600 text-sm flex items-center space-x-2">
+        <i class="fa-solid fa-users"></i>
+        <span>Listado de Alumnos</span>
+      </button>
+      <button onclick="cambiarSeccion('preplanta')" id="tabPreplanta" class="py-3 font-bold border-b-2 border-transparent text-gray-500 hover:text-blue-600 text-sm flex items-center space-x-2">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Pre-Planta 2027</span>
+      </button>
     </div>
+  </div>
 
-    <!-- Tabla Principal de Datos -->
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Origen</th>
-                    <th>Curso Actual</th>
-                    <th>Curso Proyectado</th>
-                    <th>Apellido y Nombre</th>
-                    <th>¿Pagó?</th>
-                    <th>Estado / Categoría</th>
-                    <th>Observaciones y Seguimiento</th>
-                </tr>
+  <main class="max-w-7xl mx-auto px-6 py-6 flex-1 w-full space-y-6">
+
+    <!-- SECCIÓN: ALUMNOS -->
+    <div id="secAlumnos" class="space-y-6">
+      
+      <!-- Contadores Métricos -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <p class="text-xs font-bold text-gray-400 uppercase">Total Matrícula</p>
+          <p id="cTotal" class="text-2xl font-black text-gray-800 mt-1">--</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
+          <p class="text-xs font-bold text-emerald-600 uppercase">Al Día (Verde)</p>
+          <p id="cVerde" class="text-2xl font-black text-emerald-600 mt-1">--</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-amber-500">
+          <p class="text-xs font-bold text-amber-600 uppercase">Pendientes (Naranja)</p>
+          <p id="cNaranja" class="text-2xl font-black text-amber-600 mt-1">--</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-rose-500">
+          <p class="text-xs font-bold text-rose-600 uppercase">Bajas (Rojo)</p>
+          <p id="cRojo" class="text-2xl font-black text-rose-600 mt-1">--</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 col-span-2 md:col-span-1 border-l-4 border-l-purple-500">
+          <p class="text-xs font-bold text-purple-600 uppercase">Total REMA</p>
+          <p id="cRema" class="text-2xl font-black text-purple-600 mt-1">--</p>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros (Buscador + Selects) -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
+        <div class="flex justify-between items-center border-b pb-2">
+          <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Filtros de Control</span>
+          <span id="txtEstado" class="text-xs font-semibold text-blue-600">Sincronizando...</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+          <input type="text" id="inputBuscar" oninput="filtrar()" placeholder="Buscar Alumno o Código..." class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select id="selCurso" onchange="filtrar()" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Todos los Cursos Actuales</option>
+          </select>
+          <select id="selCurso2027" onchange="filtrar()" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Todos los Cursos 2027</option>
+          </select>
+          <select id="selEstado" onchange="filtrar()" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Todos los Estados</option>
+            <option value="VERDE">Al día (Verde)</option>
+            <option value="NARANJA">Pendiente (Naranja)</option>
+            <option value="ROJO">Baja (Rojo)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tabla Principal -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-800 text-white text-xs uppercase tracking-wider">
+              <tr>
+                <th class="p-3">Código</th>
+                <th class="p-3">Alumno</th>
+                <th class="p-3">Curso Actual</th>
+                <th class="p-3">Curso 2027</th>
+                <th class="p-3">REMA</th>
+                <th class="p-3 text-center">Estado Pago</th>
+                <th class="p-3">Observaciones</th>
+                <th class="p-3 text-center">Ficha</th>
+              </tr>
             </thead>
-            <tbody id="table-body">
-                <!-- Se puebla dinámicamente con JavaScript -->
+            <tbody id="tbAlumnos" class="divide-y divide-gray-100">
+              <!-- Filas dinámicas -->
             </tbody>
-        </table>
+          </table>
+        </div>
+      </div>
+
     </div>
 
-    <script>
-        // Datos Base Cargados desde la Estructura del Libro Excel
-        const alumnosData = [
-            // REMA 7°
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Bevilacqua, Nina", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Cannetti, Francesco", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará" },
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Gandino, Renata Amalia", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Jimenez, Luana Zoe", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará (confirma no continuidad)" },
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Landro, Mia", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Oscco Quispe, Valentina Isabel", pago: "NO", estado: "NO CONTESTA", obs: "Revisar pago con Camila / administración" },
-            { origen: "7° a 1°", cursoActual: "7º A", cursoProyectado: "1º TM", nombre: "Selva Ruizcalderon, Santiago Antonio", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará" },
-            { origen: "7° a 1°", cursoActual: "7º C", cursoProyectado: "1º TM", nombre: "Cuellar Puenzo, Francisco Geronimo", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE (HASTA 31/08)" },
-            { origen: "7° a 1°", cursoActual: "7º C", cursoProyectado: "1º TM", nombre: "Hervas, Guillermina", pago: "NO", estado: "NO MATRICULA", obs: "No matriculará" },
+    <!-- SECCIÓN: PRE-PLANTA 2027 -->
+    <div id="secPreplanta" class="space-y-6 hidden">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 class="text-lg font-bold text-slate-800 mb-1">Cierre Pre-Planta 2027 (Proyección Diciembre)</h2>
+        <p class="text-xs text-gray-500 mb-6">Mapeo preliminar de matrículas confirmadas y proyecciones de grupo por curso.</p>
 
-            // REMA DE 1° A 4°
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Cantatore Ruge, Antonella", pago: "NO", estado: "MOROSIDAD", obs: "Morosidad registrada en sistema" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Donayre Gimenez, Aylen", pago: "NO", estado: "MOROSIDAD", obs: "Morosidad registrada en sistema" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Fernandez Barlaro, Fernando Tomas", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Herard, Antonio Debson", pago: "SI", estado: "MÁS ADELANTE", obs: "Respondió SI, matriculará más adelante" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Maciel Iturrieta, Ramiro Eliam", pago: "NO", estado: "NO CONTESTA", obs: "Sin respuesta de la familia" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Rodriguez, Gabino Ignacio", pago: "NO", estado: "MOROSIDAD", obs: "Morosidad registrada en sistema" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Roldan Gallego, Nehuen", pago: "NO", estado: "NO MATRICULA", obs: "Tramitó reintegro de matrícula" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Slame, Omar Antonio", pago: "NO", estado: "MÁS ADELANTE", obs: "MATRICULARÁ MÁS ADELANTE" },
-            { origen: "REMA 1° a 4°", cursoActual: "1º B", cursoProyectado: "2º B", nombre: "Veliz Quaranta, Santino Nathan", pago: "NO", estado: "NO CONTESTA", obs: "Sin respuesta de la familia" },
+        <div id="gridPreplanta" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Tarjetas de Preplanta -->
+        </div>
+      </div>
+    </div>
 
-            // NUEVOS EXTERNOS
-            { origen: "Ingreso Externo", cursoActual: "Externo", cursoProyectado: "3º TT", nombre: "Jiaxin He", pago: "SI", estado: "PAGADO", obs: "Inscripción aprobada (Abril 2026)" },
-            { origen: "Ingreso Externo", cursoActual: "Externo", cursoProyectado: "2º B", nombre: "Vittoria Morales Martinez", pago: "SI", estado: "PAGADO", obs: "Inscripción aprobada (Mayo 2026)" },
-            { origen: "Ingreso Externo", cursoActual: "Externo", cursoProyectado: "1º B", nombre: "Agustín Abinet", pago: "SI", estado: "PAGADO", obs: "Inscripción aprobada (Mayo 2026)" }
-        ];
+  </main>
 
-        // Función para renderizar la tabla y actualizar KPIs
-        function renderTabla(datos) {
-            const tbody = document.getElementById("table-body");
-            tbody.innerHTML = "";
+  <!-- Modal Ficha de Alumno -->
+  <div id="modalFicha" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200">
+      <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+        <div>
+          <span id="mCodigo" class="text-xs bg-slate-700 px-2 py-0.5 rounded font-mono text-blue-300">--</span>
+          <h3 id="mNombre" class="text-base font-bold mt-1">--</h3>
+        </div>
+        <button onclick="cerrarFicha()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5 space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <span class="text-xs text-gray-400 font-bold block">CURSO ACTUAL</span>
+            <span id="mCurso" class="font-bold text-gray-700">--</span>
+          </div>
+          <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <span class="text-xs text-gray-400 font-bold block">PROYECCIÓN 2027</span>
+            <span id="mCurso2027" class="font-bold text-blue-600">--</span>
+          </div>
+        </div>
+        <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+          <span class="text-xs text-gray-400 font-bold block mb-1">REMA</span>
+          <span id="mRema" class="px-2 py-0.5 rounded text-xs font-bold">--</span>
+        </div>
+        <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+          <span class="text-xs text-gray-400 font-bold block">ESTADO DE PAGO</span>
+          <span id="mEstado" class="font-bold block mt-0.5">--</span>
+        </div>
+        <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+          <span class="text-xs text-gray-400 font-bold block mb-1">OBSERVACIONES</span>
+          <p id="mObs" class="text-xs text-gray-600 italic">--</p>
+        </div>
+      </div>
+      <div class="bg-gray-50 p-3 border-t border-gray-200 text-right">
+        <button onclick="cerrarFicha()" class="bg-slate-800 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
-            datos.forEach(item => {
-                const tr = document.createElement("tr");
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyaDJPV3UglmOBx-6bpzJmgGhIKfVs1a-8zZmGtYb6Jxyq7b_c5xYPvqyX0Spydvnsm/exec";
+    let baseDatos = [];
 
-                // Asignar clase de badge según estado
-                let badgeClass = "badge-nocontesta";
-                if (item.estado === "PAGADO") badgeClass = "badge-pagado";
-                else if (item.estado === "MÁS ADELANTE") badgeClass = "badge-adelante";
-                else if (item.estado === "MOROSIDAD") badgeClass = "badge-moroso";
-                else if (item.estado === "NO MATRICULA") badgeClass = "badge-baja";
+    async function cargarDatos() {
+      const txt = document.getElementById("txtEstado");
+      txt.innerText = "Cargando...";
+      try {
+        const res = await fetch(SCRIPT_URL, { redirect: "follow" });
+        const data = await res.json();
 
-                tr.innerHTML = `
-                    <td><strong>${item.origen}</strong></td>
-                    <td>${item.cursoActual}</td>
-                    <td>${item.cursoProyectado}</td>
-                    <td><strong>${item.nombre}</strong></td>
-                    <td>${item.pago}</td>
-                    <td><span class="badge ${badgeClass}">${item.estado}</span></td>
-                    <td class="obs-text">${item.obs}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+        if (data && data.length > 1) {
+          baseDatos = data.slice(1);
+          poblarSelects(baseDatos);
+          filtrar();
+          renderPreplanta(baseDatos);
+          txt.innerText = "Sincronizado ✅";
+        }
+      } catch (err) {
+        console.error(err);
+        txt.innerText = "Error de sincronización";
+      }
+    }
 
-            actualizarKPIs(datos);
+    function poblarSelects(filas) {
+      const selC = document.getElementById("selCurso");
+      const sel27 = document.getElementById("selCurso2027");
+      
+      const setC = new Set(), set27 = new Set();
+      filas.forEach(f => {
+        if(f[2]) setC.add(f[2]);
+        if(f[3]) set27.add(f[3]);
+      });
+
+      selC.innerHTML = '<option value="">Todos los Cursos Actuales</option>';
+      setC.forEach(c => selC.innerHTML += `<option value="${c}">${c}</option>`);
+
+      sel27.innerHTML = '<option value="">Todos los Cursos 2027</option>';
+      set27.forEach(c => sel27.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+
+    function filtrar() {
+      const q = document.getElementById("inputBuscar").value.toLowerCase();
+      const cAct = document.getElementById("selCurso").value;
+      const c27 = document.getElementById("selCurso2027").value;
+      const est = document.getElementById("selEstado").value;
+
+      const res = baseDatos.filter(f => {
+        const cod = (f[0]||"").toString().toLowerCase();
+        const nom = (f[1]||"").toString().toLowerCase();
+        const cur = (f[2]||"").toString();
+        const cur27 = (f[3]||"").toString();
+        const eRaw = (f[5]||"").toString().toUpperCase();
+
+        const matchQ = nom.includes(q) || cod.includes(q);
+        const matchC = !cAct || cur === cAct;
+        const match27 = !c27 || cur27 === c27;
+
+        let matchE = true;
+        if (est === "VERDE") matchE = eRaw.includes("PAGO") || eRaw.includes("AL DIA") || eRaw.includes("SI") || eRaw.includes("VERDE");
+        if (est === "NARANJA") matchE = eRaw.includes("PENDIENTE") || eRaw.includes("NO") || eRaw.includes("NARANJA");
+        if (est === "ROJO") matchE = eRaw.includes("BAJA") || eRaw.includes("ROJO");
+
+        return matchQ && matchC && match27 && matchE;
+      });
+
+      renderTabla(res);
+      renderMetricas(res);
+    }
+
+    function renderTabla(filas) {
+      const tb = document.getElementById("tbAlumnos");
+      tb.innerHTML = "";
+
+      filas.forEach((f, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-gray-50 border-b border-gray-100";
+
+        const remaVal = (f[4]||"").toString();
+        let remaClass = "bg-gray-100 text-gray-600";
+        if (remaVal.toLowerCase().includes("7mo")) remaClass = "badge-rema-7 font-bold px-2 py-0.5 rounded text-xs";
+        else if (remaVal.trim() !== "") remaClass = "badge-rema-14 font-bold px-2 py-0.5 rounded text-xs";
+
+        const eRaw = (f[5]||"").toString().toUpperCase();
+        let eBadge = '<span class="badge-naranja px-2.5 py-1 rounded-full text-xs font-bold">🟠 Pendiente</span>';
+        if (eRaw.includes("PAGO") || eRaw.includes("AL DIA") || eRaw.includes("SI") || eRaw.includes("VERDE")) {
+          eBadge = '<span class="badge-verde px-2.5 py-1 rounded-full text-xs font-bold">🟢 Al día</span>';
+        } else if (eRaw.includes("BAJA") || eRaw.includes("ROJO")) {
+          eBadge = '<span class="badge-rojo px-2.5 py-1 rounded-full text-xs font-bold">🔴 Baja</span>';
         }
 
-        // Actualización de contadores numéricos superiores
-        function actualizarKPIs(datos) {
-            document.getElementById("kpi-total").innerText = datos.length;
-            document.getElementById("kpi-pagado").innerText = datos.filter(d => d.estado === "PAGADO" || d.pago === "SI").length;
-            document.getElementById("kpi-adelante").innerText = datos.filter(d => d.estado === "MÁS ADELANTE").length;
-            document.getElementById("kpi-moroso").innerText = datos.filter(d => d.estado === "MOROSIDAD").length;
-            document.getElementById("kpi-baja").innerText = datos.filter(d => d.estado === "NO MATRICULA").length;
-        }
+        tr.innerHTML = `
+          <td class="p-3 font-mono text-xs text-gray-500 font-semibold">${f[0]||'--'}</td>
+          <td class="p-3 font-bold text-gray-800">${f[1]||'--'}</td>
+          <td class="p-3 text-gray-600">${f[2]||'--'}</td>
+          <td class="p-3 text-blue-600 font-semibold">${f[3]||'--'}</td>
+          <td class="p-3"><span class="${remaClass}">${remaVal || 'Sin REMA'}</span></td>
+          <td class="p-3 text-center">${eBadge}</td>
+          <td class="p-3 text-xs text-gray-500 truncate max-w-xs">${f[6]||'-'}</td>
+          <td class="p-3 text-center">
+            <button onclick="abrirFicha(${idx})" class="text-blue-600 hover:text-blue-800 text-base">
+              <i class="fa-solid fa-address-card"></i>
+            </button>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+    }
 
-        // Función de filtrado combinado (Texto + Dropdowns)
-        function filtrarTabla() {
-            const searchText = document.getElementById("search-input").value.toLowerCase();
-            const filterOrigen = document.getElementById("filter-origen").value;
-            const filterEstado = document.getElementById("filter-estado").value;
+    function renderMetricas(filas) {
+      document.getElementById("cTotal").innerText = filas.length;
+      let v = 0, n = 0, r = 0, rema = 0;
 
-            const datosFiltrados = alumnosData.filter(item => {
-                const coincideNombre = item.nombre.toLowerCase().includes(searchText);
-                const coincideOrigen = filterOrigen === "" || item.origen === filterOrigen;
-                const coincideEstado = filterEstado === "" || item.estado === filterEstado;
+      filas.forEach(f => {
+        const est = (f[5]||"").toString().toUpperCase();
+        if (est.includes("PAGO") || est.includes("AL DIA") || est.includes("SI") || est.includes("VERDE")) v++;
+        else if (est.includes("BAJA") || est.includes("ROJO")) r++;
+        else n++;
 
-                return coincideNombre && coincideOrigen && coincideEstado;
-            });
+        if (f[4] && f[4].toString().trim() !== "") rema++;
+      });
 
-            renderTabla(datosFiltrados);
-        }
+      document.getElementById("cVerde").innerText = v;
+      document.getElementById("cNaranja").innerText = n;
+      document.getElementById("cRojo").innerText = r;
+      document.getElementById("cRema").innerText = rema;
+    }
 
-        // Carga inicial al abrir la página
-        window.onload = () => renderTabla(alumnosData);
-    </script>
+    function renderPreplanta(filas) {
+      const g = document.getElementById("gridPreplanta");
+      g.innerHTML = "";
+      const cursos = {};
+
+      filas.forEach(f => {
+        const c27 = f[3] || "Sin Asignar";
+        if (!cursos[c27]) cursos[c27] = { total: 0, ok: 0 };
+        cursos[c27].total++;
+        const est = (f[5]||"").toString().toUpperCase();
+        if (est.includes("PAGO") || est.includes("AL DIA") || est.includes("SI") || est.includes("VERDE")) cursos[c27].ok++;
+      });
+
+      Object.keys(cursos).sort().forEach(c => {
+        const d = cursos[c];
+        const pct = d.total > 0 ? Math.round((d.ok / d.total) * 100) : 0;
+        g.innerHTML += `
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-gray-800">${c}</span>
+              <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">${d.total} Alumnos</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-emerald-500 h-2 rounded-full" style="width: ${pct}%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500">
+              <span>Confirmados: <b>${d.ok}</b></span>
+              <span>Progreso: <b>${pct}%</b></span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function abrirFicha(idx) {
+      const f = baseDatos[idx];
+      document.getElementById("mCodigo").innerText = f[0] || 'S/D';
+      document.getElementById("mNombre").innerText = f[1] || 'S/D';
+      document.getElementById("mCurso").innerText = f[2] || 'S/D';
+      document.getElementById("mCurso2027").innerText = f[3] || 'S/D';
+      
+      const remaVal = f[4] || 'Sin REMA';
+      const mRema = document.getElementById("mRema");
+      mRema.innerText = remaVal;
+      if (remaVal.toLowerCase().includes("7mo")) mRema.className = "badge-rema-7 font-bold px-2 py-0.5 rounded text-xs";
+      else if (remaVal.trim() !== "Sin REMA") mRema.className = "badge-rema-14 font-bold px-2 py-0.5 rounded text-xs";
+      else mRema.className = "bg-gray-100 text-gray-600 font-bold px-2 py-0.5 rounded text-xs";
+
+      const eRaw = (f[5]||"").toString().toUpperCase();
+      let eTxt = "🟠 Pendiente";
+      if (eRaw.includes("PAGO") || eRaw.includes("AL DIA") || eRaw.includes("SI") || eRaw.includes("VERDE")) eTxt = "🟢 Pago / Al día";
+      else if (eRaw.includes("BAJA") || eRaw.includes("ROJO")) eTxt = "🔴 Baja registrada";
+      document.getElementById("mEstado").innerText = eTxt;
+
+      document.getElementById("mObs").innerText = f[6] || 'Sin observaciones.';
+      document.getElementById("modalFicha").classList.remove("hidden");
+    }
+
+    function cerrarFicha() {
+      document.getElementById("modalFicha").classList.add("hidden");
+    }
+
+    function cambiarSeccion(s) {
+      const secA = document.getElementById("secAlumnos");
+      const secP = document.getElementById("secPreplanta");
+      const tabA = document.getElementById("tabAlumnos");
+      const tabP = document.getElementById("tabPreplanta");
+
+      if (s === 'alumnos') {
+        secA.classList.remove("hidden");
+        secP.classList.add("hidden");
+        tabA.className = "py-3 font-bold border-b-2 border-blue-600 text-blue-600 text-sm flex items-center space-x-2";
+        tabP.className = "py-3 font-bold border-b-2 border-transparent text-gray-500 hover:text-blue-600 text-sm flex items-center space-x-2";
+      } else {
+        secA.classList.add("hidden");
+        secP.classList.remove("hidden");
+        tabP.className = "py-3 font-bold border-b-2 border-blue-600 text-blue-600 text-sm flex items-center space-x-2";
+        tabA.className = "py-3 font-bold border-b-2 border-transparent text-gray-500 hover:text-blue-600 text-sm flex items-center space-x-2";
+      }
+    }
+
+    cargarDatos();
+  </script>
 </body>
 </html>
